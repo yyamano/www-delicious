@@ -36,7 +36,6 @@ module WWW #:nodoc:
   # You can read user Posts, Tags and Bundles 
   # but you can create new Posts, Tags and Bundles as well.
   #
-  #
   # == Basic Usage
   # 
   # The following is just a basic demonstration of the main features.
@@ -155,18 +154,15 @@ module WWW #:nodoc:
     #   end
     #   # => self
     #   
-    # === Options
-    # This class accepts a Hash with additional options.
-    # Here's the list of valid keys:
-    #
-    # <tt>:user_agent</tt>:: User agent to display in HTTP requests.
-    # <tt>:base_uri</tt>:: The base URI to del.icio.us API.
+    # ==== Options
+    # 
+    # :foo<String>:: The user agent to display in HTTP requests.
+    # :bar<String>:: The base URI to del.icio.us API.
     # 
     def initialize(username, password, options = {}, &block) #  :yields: delicious
       @username, @password = username.to_s, password.to_s
-      
-      # set API base URI
       @base_uri = URI.parse(options[:base_uri] || API_BASE_URI)
+      @headers  = {}
       
       init_user_agent(options)
       init_http_client(options)
@@ -210,12 +206,11 @@ module WWW #:nodoc:
     end
     
     # Returns current user agent string.
-    def user_agent()
+    def user_agent
       return @headers['User-Agent']
     end
     
     
-    # 
     # Returns true if given account credentials are valid.
     # 
     #   d = WWW::Delicious.new('username', 'password')
@@ -228,53 +223,53 @@ module WWW #:nodoc:
     # It doesn't return false if an HTTP error or any kind of other error occurs,
     # it raises back the exception to the caller instead.
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def valid_account?
       update()
-      return true
+      true
     rescue HTTPError => e
-      return false if e.message =~ /invalid username or password/i
-      raise 
+      raise unless e.message =~ /invalid username or password/i
+      false
     end
 
-    # 
     # Checks to see when a user last posted an item
     # and returns the last update +Time+ for the user.
     # 
-    #   d.update() # => Fri May 02 18:02:48 UTC 2008
+    #   d.update # => Fri May 02 18:02:48 UTC 2008
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
-    def update()
+    def update
       response = request(API_PATH_UPDATE)
-      return parse_update_response(response.body)
+      parse_update_response(response.body)
     end
     
-    # 
     # Retrieves all of a user's bundles
     # and returns an array of <tt>WWW::Delicious::Bundle</tt>.
     # 
-    #   d.bundles_all() # => [#<WWW::Delicious::Bundle>, #<WWW::Delicious::Bundle>, ...]
-    #   d.bundles_all() # => []
+    #   d.bundles_all   # => [#<WWW::Delicious::Bundle>, #<WWW::Delicious::Bundle>, ...]
+    #   d.bundles_all   # => []
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
-    def bundles_all()
+    def bundles_all
       response = request(API_PATH_BUNDLES_ALL)
-      return parse_bundle_collection(response.body)
+      parse_bundle_collection(response.body)
     end
     
-    # 
     # Assignes a set of tags to a single bundle, 
     # wipes away previous settings for bundle.
     # 
@@ -284,18 +279,18 @@ module WWW #:nodoc:
     #   # create from a string
     #   d.bundles_set('MyBundle', %w(foo bar))
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def bundles_set(bundle_or_name, tags = [])
       params = prepare_bundles_set_params(bundle_or_name, tags)
       response = request(API_PATH_BUNDLES_SET, params)
-      return parse_and_eval_execution_response(response.body)
+      parse_and_eval_execution_response(response.body)
     end
     
-    # 
     # Deletes +bundle_or_name+ bundle from del.icio.us.
     # +bundle_or_name+ can be either a WWW::Delicious::Bundle instance 
     # or a string with the name of the bundle.
@@ -309,35 +304,35 @@ module WWW #:nodoc:
     #   # delete from a string
     #   d.bundles_delete('MyBundle', %w(foo bar))
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def bundles_delete(bundle_or_name)
       params = prepare_bundles_delete_params(bundle_or_name)
       response = request(API_PATH_BUNDLES_DELETE, params)
-      return parse_and_eval_execution_response(response.body)
+      parse_and_eval_execution_response(response.body)
     end
     
-    # 
     # Retrieves the list of tags and number of times used by the user
     # and returns an array of <tt>WWW::Delicious::Tag</tt>.
     # 
-    #   d.tags_get() # => [#<WWW::Delicious::Tag>, #<WWW::Delicious::Tag>, ...]
-    #   d.tags_get() # => []
+    #   d.tags_get  # => [#<WWW::Delicious::Tag>, #<WWW::Delicious::Tag>, ...]
+    #   d.tags_get  # => []
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
-    def tags_get()
+    def tags_get
       response = request(API_PATH_TAGS_GET)
-      return parse_tag_collection(response.body)
+      parse_tag_collection(response.body)
     end
     
-    # 
     # Renames an existing tag with a new tag name.
     # 
     #   # rename from a tag
@@ -346,15 +341,16 @@ module WWW #:nodoc:
     #   # rename from a string
     #   d.bundles_set('old', 'new')
     # 
+    # ==== Raises
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def tags_rename(from_name_or_tag, to_name_or_tag)
       params = prepare_tags_rename_params(from_name_or_tag, to_name_or_tag)
       response = request(API_PATH_TAGS_RENAME, params)
-      return parse_and_eval_execution_response(response.body)
+      parse_and_eval_execution_response(response.body)
     end
     
     # 
@@ -362,8 +358,8 @@ module WWW #:nodoc:
     # If no option is given, the last post is returned.
     # If no date or url is given, most recent date will be used.
     # 
-    #   d.posts_get() # => [#<WWW::Delicious::Post>, #<WWW::Delicious::Post>, ...]
-    #   d.posts_get() # => []
+    #   d.posts_get   # => [#<WWW::Delicious::Post>, #<WWW::Delicious::Post>, ...]
+    #   d.posts_get   # => []
     # 
     #   # get all posts tagged with ruby
     #   d.posts_get(:tag => WWW::Delicious::Tag.new('ruby))
@@ -375,20 +371,22 @@ module WWW #:nodoc:
     #   d.posts_get(:tag => WWW::Delicious::Tag.new('ruby),
     #               :url => URI.parse('http://www.simonecarletti.com'))
     # 
+    # ==== Options
     # 
-    # === Options
-    # <tt>:tag</tt>:: a tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
-    # <tt>:dt</tt>::  a +Time+ with a date to filter by.
-    # <tt>:url</tt>:: a valid URI to filter by. It can be either an instance of +URI+ or a +String+.
+    # :tag:: A tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
+    # :dt::  A +Time+ with a date to filter by.
+    # :url:: A valid URI to filter by. It can be either an instance of +URI+ or a +String+.
     # 
-    # Raises::  WWW::Delicious::Error
-    # Raises::  WWW::Delicious::HTTPError
-    # Raises::  WWW::Delicious::ResponseError
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def posts_get(options = {})
       params = prepare_posts_params(options.clone, [:dt, :tag, :url])
       response = request(API_PATH_POSTS_GET, params)
-      return parse_post_collection(response.body)
+      parse_post_collection(response.body)
     end
 
     # 
@@ -400,15 +398,21 @@ module WWW #:nodoc:
     #   # get the 10 most recent posts
     #   d.posts_recent(:count => 10)
     # 
+    # ==== Options
     # 
-    # === Options
-    # <tt>:tag</tt>::   a tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
-    # <tt>:count</tt>:: number of items to retrieve. (default: 15, maximum: 100).
+    # :tag::   A tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
+    # :count:: The number of items to retrieve (default: 15, maximum: 100).
+    # 
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
     # 
     def posts_recent(options = {})
       params = prepare_posts_params(options.clone, [:count, :tag])
       response = request(API_PATH_POSTS_RECENT, params)
-      return parse_post_collection(response.body)
+      parse_post_collection(response.body)
     end
     
     # 
@@ -420,14 +424,20 @@ module WWW #:nodoc:
     #   # get all posts matching ruby
     #   d.posts_all(:tag => WWW::Delicious::Tag.new('ruby'))
     # 
+    # ==== Options
     # 
-    # === Options
-    # <tt>:tag</tt>:: a tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
-    #
+    # :tag:: A tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
+    # 
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
+    # 
     def posts_all(options = {})
       params = prepare_posts_params(options.clone, [:tag])
       response = request(API_PATH_POSTS_ALL, params)
-      return parse_post_collection(response.body)
+      parse_post_collection(response.body)
     end
 
     #
@@ -441,14 +451,20 @@ module WWW #:nodoc:
     #   d.posts_dates(:tag => WWW::Delicious::Tag.new('ruby'))
     #   # => { '2008-05-05' => 10, '2008-05-06' => 3, ... }
     # 
+    # ==== Options
     # 
-    # === Options
-    # <tt>:tag</tt>:: a tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
-    #
+    # :tag:: A tag to filter by. It can be either a <tt>WWW::Delicious::Tag</tt> or a +String+.
+    # 
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
+    # 
     def posts_dates(options = {})
       params = prepare_posts_params(options.clone, [:tag])
       response = request(API_PATH_POSTS_DATES, params)
-      return parse_posts_dates_response(response.body)
+      parse_posts_dates_response(response.body)
     end
 
     #
@@ -463,11 +479,16 @@ module WWW #:nodoc:
     #   # add a post from values
     #   d.posts_add(:url => 'http://www.foobar.com', :title => 'Hello world!')
     # 
-    #
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
+    # 
     def posts_add(post_or_values)
       params = prepare_param_post(post_or_values).to_params
       response = request(API_PATH_POSTS_ADD, params)
-      return parse_and_eval_execution_response(response.body)
+      parse_and_eval_execution_response(response.body)
     end
 
     #
@@ -483,11 +504,16 @@ module WWW #:nodoc:
     #   # delete a post from a string
     #   d.post_delete('http://www.foobar.com/')
     # 
-    #
+    # ==== Raises
+    # 
+    # WWW::Delicious::Error:: In case of a generic error
+    # WWW::Delicious::HTTPError:: In case of HTTP request failure
+    # WWW::Delicious::ResponseError:: In case of invalid or malformed response
+    # 
     def posts_delete(url)
       params = prepare_posts_params({:url => url}, [:url])
       response = request(API_PATH_POSTS_DELETE, params)
-      return parse_and_eval_execution_response(response.body)
+      parse_and_eval_execution_response(response.body)
     end
 
     
@@ -504,9 +530,7 @@ module WWW #:nodoc:
       
       # Initializes user agent value for HTTP requests.
       def init_user_agent(options)
-        user_agent = options[:user_agent] || default_user_agent()
-        @headers ||= {}
-        @headers['User-Agent'] = user_agent
+        @headers['User-Agent'] = options[:user_agent] || default_user_agent
       end
       
       # 
@@ -515,15 +539,15 @@ module WWW #:nodoc:
       # By default, the user agent is composed by the following schema:
       # <tt>NAME/VERSION (Ruby/RUBY_VERSION)</tt>
       # 
-      # * +NAME+ is the constant representing this library name
-      # * +VERSION+ is the constant representing current library version
-      # * +RUBY_VERSION+ is the version of Ruby interpreter the library is interpreted by
+      # +NAME+:: the constant representing this library name
+      # +VERSION+:: the constant representing current library version
+      # +RUBY_VERSION+ the version of Ruby interpreter the library is interpreted by
       # 
       #   default_user_agent
       #   # => WWW::Delicious/0.1.0 (Ruby/1.8.6)
       # 
       def default_user_agent
-        return "#{NAME}/#{VERSION} (Ruby/#{RUBY_VERSION})"
+        "#{NAME}/#{VERSION} (Ruby/#{RUBY_VERSION})"
       end
       
       
@@ -663,22 +687,22 @@ module WWW #:nodoc:
       # Parses a response containing a collection of Tags
       # and returns an array of <tt>WWW::Delicious::Tag</tt>.
       def parse_tag_collection(body)
-        dom  = parse_and_validate_response(body, :root_name => 'tags')
+        dom = parse_and_validate_response(body, :root_name => 'tags')
         dom.root.elements.collect('tag') { |xml| Tag.from_rexml(xml) }
       end
       
       # Parses a response containing a collection of Posts
       # and returns an array of <tt>WWW::Delicious::Post</tt>.
       def parse_post_collection(body)
-        dom  = parse_and_validate_response(body, :root_name => 'posts')
+        dom = parse_and_validate_response(body, :root_name => 'posts')
         dom.root.elements.collect('post') { |xml| Post.from_rexml(xml) }
       end
       
       # Parses the response of a <tt>posts_dates</tt> request
       # and returns a +Hash+ of date => count.
       def parse_posts_dates_response(body)
-        dom  = parse_and_validate_response(body, :root_name => 'dates')
-        return dom.root.get_elements('date').inject({}) do |collection, xml|
+        dom = parse_and_validate_response(body, :root_name => 'dates')
+        dom.root.get_elements('date').inject({}) do |collection, xml|
           date  = xml.if_attribute_value(:date) 
           count = xml.if_attribute_value(:count)
           collection.merge({ date => count })
@@ -686,51 +710,53 @@ module WWW #:nodoc:
       end
       
       
-      # 
       # Prepares the params for a `bundles_set` call
       # and returns a Hash with the params ready for the HTTP request.
-      # 
-      # Raises::  WWW::Delicious::Error
+      #
+      # WWW::Delicious::Error:: if params are invalid
       # 
       def prepare_bundles_set_params(name_or_bundle, tags = [])
         bundle = prepare_param_bundle(name_or_bundle, tags) do |b|
           raise Error, "Bundle name is empty" if b.name.empty?
           raise Error, "Bundle must contain at least one tag" if b.tags.empty?
         end
-        return { :bundle => bundle.name, :tags => bundle.tags.join(' ') }
+        { :bundle => bundle.name, :tags => bundle.tags.join(' ') }
       end
       
-      # 
       # Prepares the params for a `bundles_set` call
       # and returns a Hash with the params ready for the HTTP request.
       # 
-      # Raises::  WWW::Delicious::Error
+      # ==== Raises
+      #
+      # WWW::Delicious::Error:: if params are invalid
       # 
       def prepare_bundles_delete_params(name_or_bundle)
         bundle = prepare_param_bundle(name_or_bundle) do |b|
           raise Error, "Bundle name is empty" if b.name.empty?
         end
-        return { :bundle => bundle.name }
+        { :bundle => bundle.name }
       end
       
-      # 
       # Prepares the params for a `tags_rename` call
       # and returns a Hash with the params ready for the HTTP request.
       # 
-      # Raises::  WWW::Delicious::Error
+      # ==== Raises
+      #
+      # WWW::Delicious::Error:: if params are invalid
       # 
       def prepare_tags_rename_params(from_name_or_tag, to_name_or_tag)
         from, to = [from_name_or_tag, to_name_or_tag].collect do |v|
           prepare_param_tag(v)
         end
-        return { :old => from, :new => to }
+        { :old => from, :new => to }
       end
       
-      # 
       # Prepares the params for a `post_*` call
       # and returns a Hash with the params ready for the HTTP request.
       # 
-      # Raises::  WWW::Delicious::Error
+      # ==== Raises
+      #
+      # WWW::Delicious::Error:: if params are invalid
       # 
       def prepare_posts_params(params, allowed_params = [])
         compare_params(params, allowed_params)
@@ -748,18 +774,18 @@ module WWW #:nodoc:
         else
           15 # default value
         end
-        
-        return params
+        params
       end
       
       
-      # 
       # Prepares the +post+ param for an API request.
       # 
       # Creates and returns a <tt>WWW::Delicious::Post</tt> instance from <tt>post_or_values</tt>.
       # <tt>post_or_values</tt> can be either an Hash with post attributes
       # or a <tt>WWW::Delicious::Post</tt> instance.
       # 
+      # FIXME:: should raise WWW::Delicious::Error as similar methods.
+      #
       def prepare_param_post(post_or_values, &block)
         post = case post_or_values
           when WWW::Delicious::Post
@@ -776,13 +802,14 @@ module WWW #:nodoc:
         post
       end
       
-      # 
       # Prepares the +bundle+ param for an API request.
       # 
       # Creates and returns a <tt>WWW::Delicious::Bundle</tt> instance from <tt>name_or_bundle</tt>.
       # <tt>name_or_bundle</tt> can be either a string holding bundle name
       # or a <tt>WWW::Delicious::Bundle</tt> instance.
       # 
+      # FIXME:: should raise WWW::Delicious::Error as similar methods.
+      #
       def prepare_param_bundle(name_or_bundle, tags = [], &block) #  :yields: bundle
         bundle = case name_or_bundle
           when WWW::Delicious::Bundle
@@ -796,13 +823,14 @@ module WWW #:nodoc:
         bundle
       end
       
-      # 
       # Prepares the +tag+ param for an API request.
       # 
       # Creates and returns a <tt>WWW::Delicious::Tag</tt> instance from <tt>name_or_tag</tt>.
       # <tt>name_or_tag</tt> can be either a string holding tag name
       # or a <tt>WWW::Delicious::Tag</tt> instance.
       # 
+      # FIXME:: should raise WWW::Delicious::Error as similar methods.
+      #
       def prepare_param_tag(name_or_tag, &block) #  :yields: tag
         tag = case name_or_tag
           when WWW::Delicious::Tag
@@ -817,10 +845,9 @@ module WWW #:nodoc:
         tag
       end
       
-      # 
       # Checks whether user given +params+ are valid against a defined collection of +valid_params+.
       # 
-      # === Examples
+      # ==== Examples
       # 
       #   params = {:foo => 1, :bar => 2}
       #
@@ -833,7 +860,9 @@ module WWW #:nodoc:
       #   compare_params(params, [:foo])
       #   # => raises
       # 
-      # Raises::  WWW::Delicious::Error
+      # ==== Raises
+      # 
+      # WWW::Delicious::Error:: if +params+ doesn't match +valid_params+
       # 
       def compare_params(params, valid_params)
         raise ArgumentError, "Expected `params` to be a kind of `Hash`" unless params.kind_of?(Hash)
@@ -845,88 +874,15 @@ module WWW #:nodoc:
       end
     
     
-    module XMLUtils #:nodoc:
-      
-      #
-      # Returns the +xmlattr+ attribute value for current <tt>REXML::Element</tt>.
-      # 
-      # If block is given and attribute value is not nil,
-      # the content of the block is executed.
-      # 
-      # === Examples
-      # 
-      #   dom = REXML::Document.new('<a name="1"><b>foo</b><b>bar</b></a>')
-      # 
-      #   dom.root.if_attribute_value(:name)
-      #   # => "1"
-      # 
-      #   dom.root.if_attribute_value(:name) { |v| v.to_i }
-      #   # => 1
-      # 
-      #   dom.root.if_attribute_value(:foo)
-      #   # => nil
-      # 
-      #   dom.root.if_attribute_value(:name) { |v| v.to_i }
-      #   # => nil
-      #
-      def if_attribute_value(xmlattr, &block) #:nodoc:
-        value = if attr = self.attribute(xmlattr.to_s)
-            attr.value
-          else
-            nil
-          end
-        value = yield value if !value.nil? and block_given?
-        value
-      end
-      
-      #
-      # Returns the value of +expression+ child of this element, if it exists.
-      # If blog is given, block is called on +expression+ element value
-      # and the result is returned.
-      #
-      def if_element_value(expression, &block)
-        if_element(expression) do |element|
-          value = element.text
-          value = yield value if block_given?
-          value
-        end
-      end
-      
-      #
-      # Executes the content of +block+ on +expression+
-      # child of this element, if it exists.
-      # Returns the result or +nil+ if +xmlelement+ doesn't exist.
-      #
-      def if_element(expression, &block)
-        raise LocalJumpError, "no block given" unless block_given?
-        if element = self.elements[expression.to_s]
-          yield element
-        else
-          nil
-        end
-      end
-    
-    end # XMLUtils
-
   end
 end
 
 
-class Object
+class Object # :nodoc:
   
   # An object is blank if it's false, empty, or a whitespace string.
   # For example, "", "   ", +nil+, [], and {} are blank.
-  # 
-  # This simplifies
-  # 
-  #   if !address.nil? && !address.empty?
-  # 
-  # to
-  # 
-  #   if !address.blank?
-  #
-  # Object#blank? comes from the GEM ActiveSupport 2.1.
-  # 
+  # Grabbed from ActionSupport.
   def blank? 
     respond_to?(:empty?) ? empty? : !self
   end unless Object.method_defined? :blanks?
@@ -934,8 +890,60 @@ class Object
 end
 
 
-module REXML # :nodoc:
-  class Element < Parent # :nodoc:
-    include WWW::Delicious::XMLUtils
+class REXML::Element < REXML::Parent # :nodoc:
+
+  # Returns the +xmlattr+ attribute value for current <tt>REXML::Element</tt>.
+  # 
+  # If block is given and attribute value is not nil,
+  # the content of the block is executed.
+  # 
+  # ==== Examples
+  # 
+  #   dom = REXML::Document.new('<a name="1"><b>foo</b><b>bar</b></a>')
+  # 
+  #   dom.root.if_attribute_value(:name)
+  #   # => "1"
+  # 
+  #   dom.root.if_attribute_value(:name) { |v| v.to_i }
+  #   # => 1
+  # 
+  #   dom.root.if_attribute_value(:foo)
+  #   # => nil
+  # 
+  #   dom.root.if_attribute_value(:name) { |v| v.to_i }
+  #   # => nil
+  #
+  def if_attribute_value(xmlattr, &block) #:nodoc:
+    value = if attr = self.attribute(xmlattr.to_s)
+        attr.value
+      else
+        nil
+      end
+    value = yield value if !value.nil? and block_given?
+    value
   end
+  
+  # Returns the value of +expression+ child of this element, if it exists.
+  # If blog is given, block is called on +expression+ element value
+  # and the result is returned.
+  def if_element_value(expression, &block)
+    if_element(expression) do |element|
+      value = element.text
+      value = yield value if block_given?
+      value
+    end
+  end
+  
+  # Executes the content of +block+ on +expression+
+  # child of this element, if it exists.
+  # Returns the result or +nil+ if +xmlelement+ doesn't exist.
+  def if_element(expression, &block)
+    raise LocalJumpError, "no block given" unless block_given?
+    if element = self.elements[expression.to_s]
+      yield element
+    else
+      nil
+    end
+  end
+
 end
