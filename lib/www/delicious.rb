@@ -622,11 +622,13 @@ module WWW #:nodoc:
       def parse_and_validate_response(body, options = {})
         dom = REXML::Document.new(body)
 
-        if (value = options[:root_name]) && dom.root.name != value
-          raise ResponseError, "Invalid response, root node is not `#{value}`"
-        end
-        if (value = options[:root_text]) && dom.root.text != value
-          raise ResponseError, value
+        if (!dom.root.nil?)
+          if (value = options[:root_name]) && dom.root.name != value
+            raise ResponseError, "Invalid response, root node is not `#{value}`"
+          end
+          if (value = options[:root_text]) && dom.root.text != value
+            raise ResponseError, value
+          end
         end
 
         return dom
@@ -658,6 +660,9 @@ module WWW #:nodoc:
       # and returns an array of <tt>WWW::Delicious::Bundle</tt>.
       def parse_bundle_collection(body)
         dom = parse_and_validate_response(body, :root_name => 'bundles')
+        if (dom.root.nil?)
+          return []
+        end
         dom.root.elements.collect('bundle') { |xml| Bundle.from_rexml(xml) }
       end
 
