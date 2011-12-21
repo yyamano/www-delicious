@@ -370,11 +370,11 @@ module WWW #:nodoc:
     #   d.posts_get(:tag => WWW::Delicious::Tag.new('ruby))
     #
     #   # get all posts matching URL 'http://www.simonecarletti.com'
-    #   d.posts_get(:url => URI.parse('http://www.simonecarletti.com'))
+    #   d.posts_get(:url => http://www.simonecarletti.com')
     #
     #   # get all posts tagged with ruby and matching URL 'http://www.simonecarletti.com'
     #   d.posts_get(:tag => WWW::Delicious::Tag.new('ruby),
-    #               :url => URI.parse('http://www.simonecarletti.com'))
+    #               :url => 'http://www.simonecarletti.com')
     #
     #
     # === Options
